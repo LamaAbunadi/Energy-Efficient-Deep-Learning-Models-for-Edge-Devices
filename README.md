@@ -2,6 +2,7 @@
 
 ```
 import pandas as pd
+import time
 import torch
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
@@ -119,24 +120,24 @@ print("Baseline Accuracy:", evaluate(model), "%")
 ```
 Baseline Accuracy: 100.0 %
 ```
-**Second Standard: is Model Size (MB)**
+**Second Standard: is Model Size (KB)**
 ```
 import torch
 import os
 
 torch.save(model.state_dict(), "model.pth")
 
-model_size_mb = os.path.getsize("model.pth") / (1024 * 1024)
-print(f"Model Size: {model_size_mb:.2f} MB")
+model_size_kb = os.path.getsize("model.pth") / 1024
+print(f"Model Size: {model_size_kb:.2f} KB")
 ```
 
 ```
-Model Size: 0.01 MB
+Model Size ≈ 10.24 KB
 ```
 **Third Standard: Inference Time (ms)**
 
 ```
-import time
+
 
 if device.type == 'cuda':
     torch.cuda.synchronize()
@@ -238,6 +239,22 @@ print(f"Accuracy after pruning: {accuracy:.2f}%")
 
 ```
 Accuracy after pruning: 100.00%
+```
+**Second Standard: is Model Size (KB)**
+
+```
+Model Size: 4.28 KB
+```
+
+**Third Standard: Inference Time (ms)**
+```
+
+```
+
+**Fourth Standard: Estimated Energy Consumption**
+
+```
+
 ```
 
 
