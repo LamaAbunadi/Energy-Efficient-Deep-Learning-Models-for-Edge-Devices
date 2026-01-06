@@ -5,7 +5,7 @@ import pandas as pd
 import torch
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
-df = pd.read_csv('/kaggle/input/iot-telemetry-data/iot_telemetry_data.csv')
+df = pd.read_csv("/kaggle/input/environmental-sensor-data-132k/iot_telemetry_data.csv")
 
 features = ['co', 'humidity', 'light', 'lpg', 'motion', 'smoke', 'temp']
 X = df[features].values
