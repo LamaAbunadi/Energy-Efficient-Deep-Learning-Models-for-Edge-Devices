@@ -1,0 +1,136 @@
+import pandas as pd
+import torch
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+
+df = pd.read_csv("sensor_data.csv")
+
+features = ['co', 'humidity', 'light', 'lpg', 'motion', 'smoke', 'temp']
+X = df[features].values
+
+# Example rule-based labeling (can be replaced)
+df['label'] = (
+    (df['co'] > 9) |
+    (df['smoke'] > 300) |
+    (df['temp'] > 50)
+).astype(int)
+
+y = df['label'].values
+
+scaler = StandardScaler()
+X = scaler.fit_transform(X)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+X_train = torch.tensor(X_train, dtype=torch.float32)
+X_test  = torch.tensor(X_test, dtype=torch.float32)
+y_train = torch.tensor(y_train, dtype=torch.long)
+y_test  = torch.tensor(y_test, dtype=torch.long)
+
+from torch.utils.data import Dataset, DataLoader
+
+class SensorDataset(Dataset):
+    def __init__(self, X, y):
+        self.X = X
+        self.y = y
+
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, idx):
+        return self.X[idx], self.y[idx]
+
+train_loader = DataLoader(SensorDataset(X_train, y_train), batch_size=32, shuffle=True)
+test_loader  = DataLoader(SensorDataset(X_test, y_test), batch_size=32, shuffle=False)
+
+
+import torch.nn as nn
+
+class MultiSensorNet(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(7, 32),
+            nn.ReLU(),
+            nn.Linear(32, 16),
+            nn.ReLU(),
+            nn.Linear(16, 2)
+        )
+
+    def forward(self, x):
+        return self.net(x)
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = MultiSensorNet().to(device)
+
+
+import torch.optim as optim
+
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+model.train()
+for epoch in range(5):
+    for x, y in train_loader:
+        x, y = x.to(device), y.to(device)
+
+        optimizer.zero_grad()
+        loss = criterion(model(x), y)
+        loss.backward()
+        optimizer.step()
+
+    print(f"Epoch {epoch+1}, Loss: {loss.item():.4f}")
+
+
+def evaluate(model):
+    model.eval()
+    correct, total = 0, 0
+    with torch.no_grad():
+        for x, y in test_loader:
+            x, y = x.to(device), y.to(device)
+            preds = model(x).argmax(dim=1)
+            correct += (preds == y).sum().item()
+            total += y.size(0)
+    return 100 * correct / total
+
+print("Baseline Accuracy:", evaluate(model), "%")
+
+
+import torch.nn.utils.prune as prune
+
+for module in model.modules():
+    if isinstance(module, nn.Linear):
+        prune.ln_structured(module, name='weight', amount=0.3, n=2, dim=0)
+
+for module in model.modules():
+    if isinstance(module, nn.Linear):
+        prune.remove(module, 'weight')
+
+
+quantized_model = torch.quantization.quantize_dynamic(
+    model,
+    {nn.Linear},
+    dtype=torch.qint8
+)
+
+
+import os, time
+
+torch.save(model.state_dict(), "fp32.pth")
+torch.save(quantized_model.state_dict(), "int8.pth")
+
+print("FP32 size (MB):", os.path.getsize("fp32.pth") / 1024**2)
+print("INT8 size (MB):", os.path.getsize("int8.pth") / 1024**2)
+
+def latency(model):
+    model.eval()
+    x = torch.randn(1, 7)
+    start = time.time()
+    for _ in range(100):
+        model(x)
+    return (time.time() - start) / 100
+
+print("FP32 latency:", latency(model))
+print("INT8 latency:", latency(quantized_model))
