@@ -98,6 +98,7 @@ for epoch in range(5):
 ```
 
 **5.Evaluation**
+
 **First Standard: is Accuracy**
 
 ```
@@ -129,11 +130,74 @@ model_size_mb = os.path.getsize("model.pth") / (1024 * 1024)
 print(f"Model Size: {model_size_mb:.2f} MB")
 ```
 
-**Third Standard: is Inference Time (ms)**
+```
+Model Size: 0.01 MB
+```
+**Third Standard: Inference Time (ms)**
 
-**Fourth Standard: is Estimated Energy Consumption**
+```
+import time
+
+if device.type == 'cuda':
+    torch.cuda.synchronize()
+start_time = time.time()
+
+with torch.no_grad():
+    outputs = model(X_test)
+
+if device.type == 'cuda':
+    torch.cuda.synchronize()
+end_time = time.time()
+
+num_samples = X_test.shape[0]
+total_time = end_time - start_time
+inference_time_per_sample = (total_time / num_samples) * 1000  # ms per sample
+
+print(f"Inference time per sample: {inference_time_per_sample:.4f} ms")
+```
+
+
+```
+Inference time per sample: 0.0001 ms
+```
+
+**Fourth Standard: Estimated Energy Consumption**
+
+```
+# -----------------------------
+# 1. Set approximate Power (Watts)
+# -----------------------------
+# Adjust based on your device
+if device.type == 'cuda':
+    power_watts = 120  # typical GPU power
+else:
+    power_watts = 65   # typical CPU power
+
+# -----------------------------
+# 2. Estimated energy per sample
+# -----------------------------
+energy_per_sample_joules = (total_time / num_samples) * power_watts
+print(f"Estimated energy per sample: {energy_per_sample_joules:.4f} J")
+
+# -----------------------------
+# 3. Estimated total energy for the entire test set
+# -----------------------------
+energy_total_joules = total_time * power_watts
+print(f"Estimated total energy for all samples: {energy_total_joules:.4f} J")
+
+
+```
+
+
+```
+Estimated energy per sample: 0.0000 J
+Estimated total energy for all samples: 0.5718 J
+```
+
 
 **6.Structured Pruning**
+
+
 
 ```
 import torch.nn.utils.prune as prune
@@ -147,6 +211,36 @@ for module in model.modules():
         prune.remove(module, 'weight')
 
 ```
+
+**First Standard: is Accuracy**
+```
+
+model.eval()
+correct = 0
+total = 0
+
+with torch.no_grad():
+    for features, labels in test_loader:
+        features = features.to(device)   # شكلها (batch_size, 9)
+        labels = labels.to(device)
+
+        outputs = model(features)         # (batch_size, num_classes)
+        _, predicted = torch.max(outputs, 1)
+
+        total += labels.size(0)
+        correct += (predicted == labels).sum().item()
+
+accuracy = 100 * correct / total
+print(f"Accuracy after pruning: {accuracy:.2f}%")
+
+
+```
+
+```
+Accuracy after pruning: 100.00%
+```
+
+
 **7.INT8 Quantization**
 
 ```
