@@ -1,6 +1,7 @@
 **1.Load & Preprocess Data**
 
-```import pandas as pd
+```
+import pandas as pd
 import torch
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
