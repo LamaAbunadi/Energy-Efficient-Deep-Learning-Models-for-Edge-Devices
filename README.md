@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split```
 
 
 
-df = pd.read_csv("sensor_data.csv")
+df = pd.read_csv('/kaggle/input/iot-telemetry-data/iot_telemetry_data.csv')
 
 features = ['co', 'humidity', 'light', 'lpg', 'motion', 'smoke', 'temp']
 X = df[features].values
@@ -100,6 +100,7 @@ for epoch in range(5):
 ```
 
 **5.Evaluation**
+**First Standard: is Accuracy**
 
 ```
 def evaluate(model):
@@ -115,6 +116,25 @@ def evaluate(model):
 
 print("Baseline Accuracy:", evaluate(model), "%")
 ```
+
+```
+Baseline Accuracy: 100.0 %
+```
+**Second Standard: is Model Size (MB)**
+```
+import torch
+import os
+
+torch.save(model.state_dict(), "model.pth")
+
+model_size_mb = os.path.getsize("model.pth") / (1024 * 1024)
+print(f"Model Size: {model_size_mb:.2f} MB")
+```
+
+**Third Standard: is Inference Time (ms)**
+
+**Fourth Standard: is Estimated Energy Consumption**
+
 **6.Structured Pruning**
 
 ```
