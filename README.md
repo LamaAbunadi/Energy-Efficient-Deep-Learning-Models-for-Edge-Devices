@@ -248,13 +248,14 @@ Model Size: 4.28 KB
 
 **Third Standard: Inference Time (ms)**
 ```
-
+Inference time per sample: 0.0001 ms
 ```
 
 **Fourth Standard: Estimated Energy Consumption**
 
 ```
-
+Estimated energy per sample: 0.0000 J
+Estimated total energy for all samples: 0.7574 J
 ```
 
 
