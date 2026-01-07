@@ -1,36 +1,18 @@
 **1.Load & Preprocess Data**
 
 ```
+!pip -q uninstall -y gym
+!pip -q install "gymnasium==0.29.1" "stable-baselines3==2.3.2" shimmy
+
+import numpy as np
 import pandas as pd
-import time
-import torch
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
-df = pd.read_csv("/kaggle/input/environmental-sensor-data-132k/iot_telemetry_data.csv")
 
-features = ['co', 'humidity', 'light', 'lpg', 'motion', 'smoke', 'temp']
-X = df[features].values
+import gymnasium as gym
+from gymnasium import spaces
+from stable_baselines3 import DQN
 
-# Example rule-based labeling (can be replaced)
-df['label'] = (
-    (df['co'] > 9) |
-    (df['smoke'] > 300) |
-    (df['temp'] > 50)
-).astype(int)
-
-y = df['label'].values
-
-scaler = StandardScaler()
-X = scaler.fit_transform(X)
-
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
-)
-
-X_train = torch.tensor(X_train, dtype=torch.float32)
-X_test  = torch.tensor(X_test, dtype=torch.float32)
-y_train = torch.tensor(y_train, dtype=torch.long)
-y_test  = torch.tensor(y_test, dtype=torch.long)
+from stable_baselines3 import DQN
+from stable_baselines3.common.evaluation import evaluate_policy
 ```
 **2.Dataset & DataLoader**
 
